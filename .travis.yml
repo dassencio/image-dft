@@ -1,0 +1,26 @@
+language: python
+
+dist: trusty
+sudo: required
+
+python:
+  - 3.4
+  - 3.5
+  - 3.6
+
+git:
+  depth: 3
+
+install:
+  - sudo apt-get install -qq python3-tk
+  - pip3 install numpy matplotlib scipy
+
+script:
+  - ./image-dft -h
+
+notifications:
+  email:
+    recipients:
+      - diego@assencio.com
+    on_success: change
+    on_failure: always

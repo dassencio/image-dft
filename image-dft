@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+
+import argparse
+import matplotlib.pyplot as pyplot
+import numpy
+import scipy.misc
+import sys
+
+
+def fix_image(image, hist_equalization):
+    """
+    Corrects the pixel values of an image represented as a 2d array.
+
+    image - The image to be corrected.
+    hist_equalization - True if histogram equalization should be applied.
+    """
+
+    # clip all negative pixel values to zero
+    image = image.clip(min=0)
+
+    # scale the pixel values so they fall within the interval [0,255]
+    image *= 255 / numpy.max(image)
+
+    if hist_equalization is False:
+        return image
+
+    image_histogram, bins = numpy.histogram(image.flatten(), 256, normed=True)
+
+    # compute the image's cumulative distribution function (CDF)
+    cdf = image_histogram.cumsum()
+
+    # normalize the image's CDF
+    cdf = 255 * cdf / cdf[-1]
+
+    # use linear interpolation of the CDF to adjust the image
+    return numpy.interp(image.flatten(), bins[:-1], cdf).reshape(image.shape)
+
+
+def plot_images(image,
+                image_idft_mag,
+                image_idft_phase,
+                output_image,
+                hist_equalization):
+    """
+    Plots an image and the IDFT of the magnitude/phase parts of its DFT.
+
+    image - The original image.
+    image_idft_mag - The IDFT of the magnitude part of the original image's DFT.
+    image_idft_phase - The IDFT of the phase part of the original image's DFT.
+    output_image - An image on which the plot will be saved or None.
+    hist_equalization - True if histogram equalization should be applied.
+    """
+
+    figure = pyplot.figure()
+
+    figure.add_subplot(131).set_title("Original image")
+    pyplot.imshow(image, cmap="gray")
+    pyplot.axis("off")
+
+    figure.add_subplot(132).set_title("IDFT of DFT magnitude")
+    pyplot.imshow(fix_image(image_idft_mag, hist_equalization), cmap="gray")
+    pyplot.axis("off")
+
+    figure.add_subplot(133).set_title("IDFT of DFT phase")
+    pyplot.imshow(fix_image(image_idft_phase, hist_equalization), cmap="gray")
+    pyplot.axis("off")
+
+    pyplot.subplots_adjust(left=0.01, right=0.99, wspace=0.02)
+
+    figure_manager = pyplot.get_current_fig_manager()
+    figure_manager.resize(*figure_manager.window.maxsize())
+
+    if output_image is None:
+        pyplot.show()
+    else:
+        pyplot.savefig(output_image, dpi=300)
+
+
+def main(input_image, output_image, hist_equalization):
+
+    try:
+        # read an input image using grayscale mode
+        image = scipy.misc.imread(input_image, mode="L")
+    except:
+        sys.stderr.write("Could not open file '%s'\n" % input_image)
+        exit(1)
+
+    # compute the DFT of the grayscale version of the input image
+    image_dft = numpy.fft.fft2(image)
+
+    # compute the IDFT of the magnitude of the image's DFT
+    image_dft_mag = numpy.abs(image_dft)
+    image_idft_mag = numpy.fft.ifft2(image_dft_mag).real
+
+    # compute the IDFT of the phase of the image's DFT
+    image_dft_phase = image_dft / image_dft_mag
+    image_idft_phase = numpy.fft.ifft2(image_dft_phase).real
+
+    plot_images(image,
+                image_idft_mag,
+                image_idft_phase,
+                output_image,
+                hist_equalization)
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-i",
+                        "--input-image",
+                        required=True,
+                        help="input image filename")
+
+    parser.add_argument("-o",
+                        "--output-image",
+                        default=None,
+                        help="output image filename")
+
+    parser.add_argument("-e",
+                        "--histogram-equalization",
+                        action="store_true",
+                        default=False,
+                        help="increases contrast of generated images")
+
+    namespace = parser.parse_args()
+
+    main(namespace.input_image,
+         namespace.output_image,
+         namespace.histogram_equalization)
