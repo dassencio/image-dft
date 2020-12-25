@@ -18,16 +18,10 @@ The following modules are used:
 
 - `matplotlib`
 - `numpy`
-- `scipy`
 
 You can install them with the following command:
 
-    pip3 install matplotlib numpy scipy
-
-On Ubuntu/Debian, you may need to install the `python3-tk` package as well
-with the following command:
-
-    sudo apt install python3-tk
+    pip3 install matplotlib numpy
 
 # Usage instructions
 

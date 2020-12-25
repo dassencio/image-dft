@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 import argparse
+import matplotlib.image as mpimg
 import matplotlib.pyplot as pyplot
 import numpy
-import scipy.misc
 import sys
 
 
@@ -24,7 +24,7 @@ def fix_image(image, hist_equalization):
     if hist_equalization is False:
         return image
 
-    image_histogram, bins = numpy.histogram(image.flatten(), 256, normed=True)
+    image_histogram, bins = numpy.histogram(image.flatten(), 256)
 
     # compute the image's cumulative distribution function (CDF)
     cdf = image_histogram.cumsum()
@@ -67,9 +67,6 @@ def plot_images(image,
 
     pyplot.subplots_adjust(left=0.01, right=0.99, wspace=0.02)
 
-    figure_manager = pyplot.get_current_fig_manager()
-    figure_manager.resize(*figure_manager.window.maxsize())
-
     if output_image is None:
         pyplot.show()
     else:
@@ -80,9 +77,9 @@ def main(input_image, output_image, hist_equalization):
 
     try:
         # read an input image using grayscale mode
-        image = scipy.misc.imread(input_image, mode="L")
+        image = numpy.dot(mpimg.imread(input_image), [0.2989, 0.5870, 0.1140])
     except:
-        sys.stderr.write("Could not open file '%s'\n" % input_image)
+        sys.stderr.write("Could not open file '%s'.\n" % input_image)
         exit(1)
 
     # compute the DFT of the grayscale version of the input image

@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+show_test_result() {
+  local test_status=$1
+  local test_name=$2
+  test $test_status -ne 0 && {
+      echo "[FAILED] $test_name."
+      exit 1
+  }
+  echo "[PASSED] $test_name."
+}
+
+for image in images/original/*.jpg
+do
+  image_name=$(basename $image)
+
+  ./image-dft -i $image -o /tmp/output.jpg
+  diff /tmp/output.jpg images/dft-default/$image_name
+  show_test_result $? "Generate DFT components for '$image' using standard settings"
+
+  ./image-dft -e -i $image -o /tmp/output.jpg
+  diff /tmp/output.jpg images/dft-histeq/$image_name
+  show_test_result $? "Generate DFT components for '$image' using histogram equalization"
+done
